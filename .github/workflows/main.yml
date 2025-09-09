@@ -16,7 +16,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x' # Atau versi spesifik yang Anda gunakan, e.g., '3.13.9'
+          flutter-version: '3.x'
 
       - name: Install dependencies
         run: flutter pub get
@@ -27,7 +27,7 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name--: Build APK
+      - name: Build APK
         run: flutter build apk
 
       - name: Upload APK Artifact
