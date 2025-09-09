@@ -14,10 +14,10 @@ String _evaluateExpression(String expression) {
     if (finalExpression.contains('/0') && !finalExpression.contains('/0.')) {
       return 'Tak terhingga';
     }
-    final p = ShuntingYardParser();
+    final p = ShuntingYardParser(); // Corrected: Use ShuntingYardParser
     final exp = p.parse(finalExpression);
-    final evaluator = RealEvaluator();
-    final eval = evaluator.evaluate(exp, ContextModel());
+    final cm = ContextModel();
+    final eval = exp.evaluate(EvaluationType.REAL, cm);
 
     // Format the result to avoid scientific notation for large numbers
     // and remove trailing .0 for whole numbers.
