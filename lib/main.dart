@@ -14,10 +14,11 @@ String _evaluateExpression(String expression) {
     if (finalExpression.contains('/0') && !finalExpression.contains('/0.')) {
       return 'Tak terhingga';
     }
-    Parser p = Parser();
-    Expression exp = p.parse(finalExpression);
-    ContextModel cm = ContextModel();
-    double eval = exp.evaluate(EvaluationType.REAL, cm);
+    final p = ShuntingYardParser();
+    final exp = p.parse(finalExpression);
+    final evaluator = const RealEvaluator();
+    final eval = evaluator.evaluate(exp, {});
+
     return eval.toString();
   } catch (e) {
     return 'Error';
@@ -410,8 +411,8 @@ class _NeuButtonState extends State<NeuButton> {
             color: accentColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: _isPressed ? [] : [
-              BoxShadow(color: accentColor.withOpacity(0.5), offset: const Offset(4, 4), blurRadius: 10),
-              BoxShadow(color: Colors.white.withOpacity(0.5), offset: const Offset(-4, -4), blurRadius: 10),
+              BoxShadow(color: accentColor.withAlpha((0.5 * 255).round()), offset: const Offset(4, 4), blurRadius: 10),
+              BoxShadow(color: Colors.white.withAlpha((0.5 * 255).round()), offset: const Offset(-4, -4), blurRadius: 10),
             ],
           )
         : BoxDecoration(
@@ -419,7 +420,7 @@ class _NeuButtonState extends State<NeuButton> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: _isPressed ? [] : [
               BoxShadow(
-                color: isDark ? Colors.black.withOpacity(0.4) : Colors.blueGrey.shade300,
+                color: isDark ? Colors.black.withAlpha((0.4 * 255).round()) : Colors.blueGrey.shade300,
                 offset: const Offset(4, 4), blurRadius: 15, spreadRadius: 1,
               ),
               BoxShadow(
