@@ -321,7 +321,7 @@ class _BuildButtons extends StatelessWidget {
       flex: isPortrait ? 3 : 2,
       child: Container(
         padding: const EdgeInsets.all(16),
-        child: FittedBox(
+        child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
