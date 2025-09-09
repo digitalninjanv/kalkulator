@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "136251052813",
+    "firebase_url": "https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "chatterbox-comedy",
+    "storage_bucket": "chatterbox-comedy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:136251052813:android:ecac34d4488c153904d644",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "136251052813-mtu43o6s56i5traafdqq82ae408gl3on.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDDWDB5GcmW1DCXIcK1gaONEaYQhNxC9s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "136251052813-mtu43o6s56i5traafdqq82ae408gl3on.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

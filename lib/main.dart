@@ -16,10 +16,20 @@ String _evaluateExpression(String expression) {
     }
     final p = ShuntingYardParser();
     final exp = p.parse(finalExpression);
-    final evaluator = const RealEvaluator();
-    final eval = evaluator.evaluate(exp, {});
+    final evaluator = RealEvaluator();
+    final eval = evaluator.evaluate(exp, ContextModel());
 
+    // Format the result to avoid scientific notation for large numbers
+    // and remove trailing .0 for whole numbers.
+    if (eval is double) {
+        String resultString = eval.toString();
+        if (resultString.endsWith('.0')) {
+            return eval.toInt().toString();
+        }
+        return resultString;
+    }
     return eval.toString();
+
   } catch (e) {
     return 'Error';
   }
