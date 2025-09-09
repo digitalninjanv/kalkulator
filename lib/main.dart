@@ -1,122 +1,460 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:math_expressions/math_expressions.dart';
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MyApp());
+// --- Top-level function for Isolate computation ---
+String _evaluateExpression(String expression) {
+  try {
+    String finalExpression = expression.replaceAll('x', '*').replaceAll('√', 'sqrt');
+    if (finalExpression.contains('/0') && !finalExpression.contains('/0.')) {
+      return 'Tak terhingga';
+    }
+    Parser p = Parser();
+    Expression exp = p.parse(finalExpression);
+    ContextModel cm = ContextModel();
+    double eval = exp.evaluate(EvaluationType.REAL, cm);
+    return eval.toString();
+  } catch (e) {
+    return 'Error';
+  }
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: const CalculatorApp(),
+    ),
+  );
+}
 
-  // This widget is the root of your application.
+// --- THEME PROVIDER ---
+class ThemeProvider with ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.dark;
+  ThemeMode get themeMode => _themeMode;
+  void toggleTheme() {
+    _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    notifyListeners();
+  }
+}
+
+// --- CALCULATOR APP ---
+class CalculatorApp extends StatelessWidget {
+  const CalculatorApp({super.key});
+
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Calculator',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFE0E5EC),
+        textTheme: GoogleFonts.poppinsTextTheme(textTheme),
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF2E5BFF),
+          secondary: Color(0xFFF06A34),
+          surface: Color(0xFFE0E5EC),
+          onSurface: Colors.black87,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF292D32),
+        textTheme: GoogleFonts.poppinsTextTheme(textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white)),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF2E5BFF),
+          secondary: Color(0xFFFF8C42),
+          surface: Color(0xFF3A3E44),
+          onSurface: Colors.white,
+        ),
+      ),
+      themeMode: Provider.of<ThemeProvider>(context).themeMode,
+      home: const CalculatorHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+// --- CALCULATOR HOME PAGE ---
+class CalculatorHomePage extends StatefulWidget {
+  const CalculatorHomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<CalculatorHomePage> createState() => _CalculatorHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _CalculatorHomePageState extends State<CalculatorHomePage> {
+  String _expression = '';
+  String _result = '0';
+  bool _isCalculating = false;
+  final List<String> _history = [];
+  final _formatter = NumberFormat('#,##0.######');
 
-  void _incrementCounter() {
+  String _formatNumber(String value) {
+    if (_isCalculating) return '...';
+    if (value == 'Error' || value == 'Tak terhingga') return value;
+    try {
+      final number = double.parse(value);
+      return _formatter.format(number);
+    } catch (e) {
+      return value;
+    }
+  }
+
+  void _showHistory() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text('Riwayat Perhitungan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: _history.isEmpty
+                ? const Center(child: Text('Belum ada riwayat.'))
+                : ListView.builder(
+                    itemCount: _history.length,
+                    itemBuilder: (context, index) {
+                      final parts = _history[index].split(' = ');
+                      return ListTile(
+                        title: Text(parts[0], style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                        trailing: Text(parts[1], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        onTap: () {
+                          setState(() {
+                            _expression = parts[0];
+                            _result = parts[1];
+                          });
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _clearAll() {
+    HapticFeedback.heavyImpact();
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _expression = '';
+      _result = '0';
+      _history.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Riwayat telah dibersihkan.'), duration: Duration(seconds: 2)),
+      );
     });
+  }
+
+  Future<void> _buttonPressed(String buttonText) async {
+    if (_isCalculating) return;
+    HapticFeedback.lightImpact();
+
+    if (buttonText == '=') {
+      if (_expression.isEmpty) return;
+      setState(() => _isCalculating = true);
+
+      final result = await compute(_evaluateExpression, _expression);
+      
+      if (!mounted) return;
+
+      if (result == 'Tak terhingga') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membagi dengan nol.'), duration: Duration(seconds: 2)),
+        );
+      }
+      
+      if (result != 'Error' && result != 'Tak terhingga') {
+         if (_history.isEmpty || _history.first != '$_expression = $result') {
+           _history.insert(0, '$_expression = $result');
+         }
+      }
+
+      setState(() {
+        _result = result;
+        _isCalculating = false;
+      });
+    } else {
+       setState(() {
+        if (buttonText == 'C') {
+          _expression = '';
+          _result = '0';
+        } else if (buttonText == '⌫') {
+          if (_expression.isNotEmpty) {
+            _expression = _expression.substring(0, _expression.length - 1);
+          }
+        } else {
+          if (_result != '0' && !(_result == 'Error' || _result == 'Tak terhingga') && _expression.isEmpty) {
+            _expression = buttonText.contains(RegExp(r'[+\-x/]')) ? _result + buttonText : buttonText;
+          } else if (_result == 'Error' || _result == 'Tak terhingga') {
+            _expression = buttonText;
+          } else {
+            _expression += buttonText;
+          }
+          if (buttonText != '=') _result = '0';
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: SafeArea(
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          children: [
+            _buildTopBar(themeProvider),
+            _buildDisplay(),
+            _BuildButtons(onButtonPressed: _buttonPressed, onClearAll: _clearAll),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(ThemeProvider themeProvider) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.history, size: 28),
+          onPressed: _showHistory,
+          tooltip: 'Lihat Riwayat',
+        ),
+        IconButton(
+          icon: Icon(themeProvider.themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, size: 28),
+          onPressed: themeProvider.toggleTheme,
+          tooltip: 'Ganti Tema',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDisplay() {
+    return Expanded(
+      flex: 2,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            GestureDetector(
+              onHorizontalDragEnd: (details) {
+                if ((details.primaryVelocity ?? 0) < 0) _buttonPressed('⌫');
+              },
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                child: Text(
+                  _expression.isEmpty ? ' ' : _expression,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.grey.shade600),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () {
+                if (_isCalculating || _result == 'Error') return;
+                Clipboard.setData(ClipboardData(text: _result));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Hasil disalin ke clipboard.'), duration: Duration(seconds: 2)),
+                );
+              },
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+                child: SingleChildScrollView(
+                  key: ValueKey<String>(_result),
+                  scrollDirection: Axis.horizontal,
+                  reverse: true,
+                  child: Text(
+                    _formatNumber(_result),
+                    style: Theme.of(context).textTheme.displayLarge,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class _BuildButtons extends StatelessWidget {
+  final Future<void> Function(String) onButtonPressed;
+  final VoidCallback onClearAll;
+  const _BuildButtons({required this.onButtonPressed, required this.onClearAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final orientation = MediaQuery.of(context).orientation;
+    final isPortrait = orientation == Orientation.portrait;
+
+    return Expanded(
+      flex: isPortrait ? 3 : 2,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            if (!isPortrait)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  NeuButton(text: "sin(", onPressed: onButtonPressed),
+                  NeuButton(text: "cos(", onPressed: onButtonPressed),
+                  NeuButton(text: "tan(", onPressed: onButtonPressed),
+                  NeuButton(text: "log(", onPressed: onButtonPressed),
+                  NeuButton(text: "√(", onPressed: onButtonPressed),
+                ],
+              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                NeuButton(text: "C", onPressed: onButtonPressed, onLongPress: onClearAll, textColor: Theme.of(context).colorScheme.secondary),
+                NeuButton(text: "(", onPressed: onButtonPressed),
+                NeuButton(text: ")", onPressed: onButtonPressed),
+                NeuButton(text: "/", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                NeuButton(text: "7", onPressed: onButtonPressed),
+                NeuButton(text: "8", onPressed: onButtonPressed),
+                NeuButton(text: "9", onPressed: onButtonPressed),
+                NeuButton(text: "x", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                NeuButton(text: "4", onPressed: onButtonPressed),
+                NeuButton(text: "5", onPressed: onButtonPressed),
+                NeuButton(text: "6", onPressed: onButtonPressed),
+                NeuButton(text: "-", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                NeuButton(text: "1", onPressed: onButtonPressed),
+                NeuButton(text: "2", onPressed: onButtonPressed),
+                NeuButton(text: "3", onPressed: onButtonPressed),
+                NeuButton(text: "+", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                NeuButton(text: "0", onPressed: onButtonPressed),
+                NeuButton(text: ".", onPressed: onButtonPressed),
+                NeuButton(text: "⌫", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+                NeuButton(text: "=", isAccent: true, onPressed: onButtonPressed, textColor: Colors.white),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NeuButton extends StatefulWidget {
+  final String text;
+  final Function(String) onPressed;
+  final VoidCallback? onLongPress;
+  final bool isAccent;
+  final Color? textColor;
+
+  const NeuButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.onLongPress,
+    this.isAccent = false,
+    this.textColor,
+  });
+
+  @override
+  State<NeuButton> createState() => _NeuButtonState();
+}
+
+class _NeuButtonState extends State<NeuButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final accentColor = Theme.of(context).colorScheme.primary;
+
+    final boxDecoration = widget.isAccent
+        ? BoxDecoration(
+            color: accentColor,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: _isPressed ? [] : [
+              BoxShadow(color: accentColor.withOpacity(0.5), offset: const Offset(4, 4), blurRadius: 10),
+              BoxShadow(color: Colors.white.withOpacity(0.5), offset: const Offset(-4, -4), blurRadius: 10),
+            ],
+          )
+        : BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: _isPressed ? [] : [
+              BoxShadow(
+                color: isDark ? Colors.black.withOpacity(0.4) : Colors.blueGrey.shade300,
+                offset: const Offset(4, 4), blurRadius: 15, spreadRadius: 1,
+              ),
+              BoxShadow(
+                color: isDark ? Colors.blueGrey.shade800 : Colors.white,
+                offset: const Offset(-4, -4), blurRadius: 15, spreadRadius: 1,
+              ),
+            ],
+          );
+
+    return Expanded(
+      child: GestureDetector(
+        onLongPress: widget.onLongPress,
+        child: Listener(
+          onPointerDown: (event) {
+            setState(() => _isPressed = true);
+            widget.onPressed(widget.text);
+          },
+          onPointerUp: (event) => setState(() => _isPressed = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            margin: const EdgeInsets.all(8),
+            decoration: boxDecoration,
+            child: Center(
+              child: Text(
+                widget.text,
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: widget.textColor ?? Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
