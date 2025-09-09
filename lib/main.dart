@@ -14,7 +14,7 @@ String _evaluateExpression(String expression) {
     if (finalExpression.contains('/0') && !finalExpression.contains('/0.')) {
       return 'Tak terhingga';
     }
-    final p = ShuntingYardParser(); // Corrected: Use ShuntingYardParser
+    final p = ShuntingYardParser();
     final exp = p.parse(finalExpression);
     final cm = ContextModel();
     final eval = exp.evaluate(EvaluationType.REAL, cm);
@@ -321,66 +321,68 @@ class _BuildButtons extends StatelessWidget {
       flex: isPortrait ? 3 : 2,
       child: Container(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            if (!isPortrait)
+        child: FittedBox(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              if (!isPortrait)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    NeuButton(text: "sin(", onPressed: onButtonPressed),
+                    NeuButton(text: "cos(", onPressed: onButtonPressed),
+                    NeuButton(text: "tan(", onPressed: onButtonPressed),
+                    NeuButton(text: "log(", onPressed: onButtonPressed),
+                    NeuButton(text: "√(", onPressed: onButtonPressed),
+                  ],
+                ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
-                  NeuButton(text: "sin(", onPressed: onButtonPressed),
-                  NeuButton(text: "cos(", onPressed: onButtonPressed),
-                  NeuButton(text: "tan(", onPressed: onButtonPressed),
-                  NeuButton(text: "log(", onPressed: onButtonPressed),
-                  NeuButton(text: "√(", onPressed: onButtonPressed),
+                  NeuButton(text: "C", onPressed: onButtonPressed, onLongPress: onClearAll, textColor: Theme.of(context).colorScheme.secondary),
+                  NeuButton(text: "(", onPressed: onButtonPressed),
+                  NeuButton(text: ")", onPressed: onButtonPressed),
+                  NeuButton(text: "/", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
                 ],
               ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                NeuButton(text: "C", onPressed: onButtonPressed, onLongPress: onClearAll, textColor: Theme.of(context).colorScheme.secondary),
-                NeuButton(text: "(", onPressed: onButtonPressed),
-                NeuButton(text: ")", onPressed: onButtonPressed),
-                NeuButton(text: "/", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                NeuButton(text: "7", onPressed: onButtonPressed),
-                NeuButton(text: "8", onPressed: onButtonPressed),
-                NeuButton(text: "9", onPressed: onButtonPressed),
-                NeuButton(text: "x", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                NeuButton(text: "4", onPressed: onButtonPressed),
-                NeuButton(text: "5", onPressed: onButtonPressed),
-                NeuButton(text: "6", onPressed: onButtonPressed),
-                NeuButton(text: "-", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                NeuButton(text: "1", onPressed: onButtonPressed),
-                NeuButton(text: "2", onPressed: onButtonPressed),
-                NeuButton(text: "3", onPressed: onButtonPressed),
-                NeuButton(text: "+", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                NeuButton(text: "0", onPressed: onButtonPressed),
-                NeuButton(text: ".", onPressed: onButtonPressed),
-                NeuButton(text: "⌫", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-                NeuButton(text: "=", isAccent: true, onPressed: onButtonPressed, textColor: Colors.white),
-              ],
-            ),
-          ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  NeuButton(text: "7", onPressed: onButtonPressed),
+                  NeuButton(text: "8", onPressed: onButtonPressed),
+                  NeuButton(text: "9", onPressed: onButtonPressed),
+                  NeuButton(text: "x", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  NeuButton(text: "4", onPressed: onButtonPressed),
+                  NeuButton(text: "5", onPressed: onButtonPressed),
+                  NeuButton(text: "6", onPressed: onButtonPressed),
+                  NeuButton(text: "-", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  NeuButton(text: "1", onPressed: onButtonPressed),
+                  NeuButton(text: "2", onPressed: onButtonPressed),
+                  NeuButton(text: "3", onPressed: onButtonPressed),
+                  NeuButton(text: "+", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  NeuButton(text: "0", onPressed: onButtonPressed),
+                  NeuButton(text: ".", onPressed: onButtonPressed),
+                  NeuButton(text: "⌫", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
+                  NeuButton(text: "=", isAccent: true, onPressed: onButtonPressed, textColor: Colors.white),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -440,7 +442,7 @@ class _NeuButtonState extends State<NeuButton> {
             ],
           );
 
-    return Expanded(
+    return Flexible( // Changed from Expanded to Flexible
       child: GestureDetector(
         onLongPress: widget.onLongPress,
         child: Listener(
