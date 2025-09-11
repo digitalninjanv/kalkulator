@@ -4,49 +4,47 @@
 
 This document outlines the plan for redesigning a calculator application with a modern, neumorphic user interface. The goal is to create a visually appealing, intuitive, and feature-rich calculator that provides an exceptional user experience.
 
-## Features
+## Implemented Features
 
-### Core Functionality
+- **Neumorphic Design:** A modern, soft UI with a tactile feel.
+- **Responsive Layout:** Adapts to portrait and landscape modes.
+- **Color-Coded Buttons:** Intuitive colors for operators, actions, and the equals button.
+- **Interactive Feedback:** Ripple effect and haptic feedback on button presses.
+- **Basic History:** An inline, scrollable view of recent calculations.
+- **Dynamic Sizing:** Expression and result fields that resize to prevent overflow.
 
-- **Basic Arithmetic Operations:** Addition, subtraction, multiplication, and division.
-- **Advanced Calculations:** Percentage and sign toggle.
-- **Input Handling:** Dynamic expression and result display.
+## New Feature Plan
 
-### User Interface (UI)
+Here is a detailed plan for the new features to be implemented:
 
-- **Neumorphic Design:** A modern, soft UI with a tactile feel, where elements emerge from the background.
-- **Responsive Layout:** The layout will adapt seamlessly to portrait, landscape, and tablet screen sizes.
-- **Color-Coded Buttons:**
-  - **Operators:** Orange
-  - **Clear/Delete:** Red
-  - **Equals:** Blue
-  - **Numbers:** White/Black (depending on the theme)
-- **Interactive Feedback:** Buttons will have a ripple effect and haptic feedback.
-- **History Tracking:**
-  - **Inline Mini-History:** A small, scrollable history view will be visible on the main screen.
-  - **Full History Panel:** A more detailed history panel will be accessible via a swipe-up gesture.
-- **Theming:**
-  - **Light Mode:** A bright, clean interface.
-  - **Dark Mode:** A high-contrast, dark interface for low-light environments.
+### 1. Smart History
+- **Interactive Mini-History:** The history items below the display will be tappable, allowing users to load a previous calculation back into the display.
+- **Searchable Full History:** A full-screen history panel will be implemented with a search bar to quickly find past calculations.
 
-## Technical Implementation
+### 2. Automatic Scientific Mode
+- **Landscape Layout:** When the device is rotated to landscape, the calculator will automatically expand to include scientific buttons (e.g., `sin`, `cos`, `tan`, `log`, `√`, `x²`).
+- **Portrait Layout:** The portrait mode will remain a simple, standard calculator to avoid clutter for everyday users.
 
-- **State Management:** `provider` package for managing the calculator's state.
-- **UI Components:** Custom-built neumorphic widgets.
-- **Theming:** Centralized theme management for light and dark modes.
-- **Dependencies:**
-  - `provider`
-  - `google_fonts`
-  - `haptic_feedback`
+### 3. Currency & Unit Converter
+- **Dedicated Tab/Screen:** A new section will be added to the app, accessible via a tab or button, for conversions.
+- **Conversion Types:**
+  - **Currency:** IDR ⇆ USD / EUR (using mock/fixed rates initially).
+  - **Length:** cm ⇆ m ⇆ inch.
+  - **Weight:** kg ⇆ lb.
 
-## Current Plan
+### 4. Quick Copy / Share
+- **Copy on Long-Press:** Users will be able to long-press the result display to instantly copy the value to the clipboard.
+- **Share Button:** An option will be provided to share the result directly to other apps like WhatsApp, Telegram, etc.
 
-The current focus is on implementing the neumorphic UI redesign, including the following steps:
+### 5. Dynamic Theming
+- **System Theme Sync:** The app will automatically sync with the device’s system-wide light or dark mode.
+- **Custom Accent Colors:** Users will be able to personalize the app by choosing from a predefined set of accent colors (e.g., blue, green, red) to replace the default orange.
 
-1.  **Project Setup:** Add necessary dependencies (`google_fonts`, `haptic_feedback`).
-2.  **Theming:** Define the light and dark color schemes and text styles.
-3.  **UI Scaffolding:** Create the main calculator screen with a responsive layout.
-4.  **Neumorphic Widgets:** Build custom widgets for the calculator buttons and display.
-5.  **State Integration:** Connect the UI to the `CalculatorLogic` state management class.
-6.  **History Feature:** Implement the inline and full history views.
-7.  **Final Touches:** Add animations, refine the layout, and ensure a polished user experience.
+## Technical Implementation Plan
+
+1.  **Add Dependencies:** Add `share_plus` for the sharing feature.
+2.  **Scientific Mode:** Use `OrientationBuilder` to create a responsive layout that changes based on device orientation.
+3.  **Converter UI:** Create a new screen/widget for the unit converter and add a `TabBar` or similar navigation.
+4.  **Copy/Share Logic:** Implement `Clipboard` services for copy functionality and integrate the `share_plus` package.
+5.  **History Enhancement:** Add `onTap` handlers to history items and build a new searchable history view.
+6.  **Theming Logic:** Use `provider` to manage the currently selected theme and accent color, allowing it to be changed dynamically.
