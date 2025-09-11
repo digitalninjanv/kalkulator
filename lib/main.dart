@@ -190,6 +190,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           children: [
             AutoSizeText(
               _expression,
+              key: const Key('expression'),
               style: Theme.of(context).textTheme.headlineSmall,
               maxLines: 1,
               minFontSize: 20,

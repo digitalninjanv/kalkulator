@@ -1,20 +1,13 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/main.dart';
-import 'package:provider/provider.dart'; // Import provider
+import 'package:provider/provider.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 void main() {
   testWidgets('Calculator smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    // We need to wrap CalculatorApp with the providers it expects,
-    // just like in main.dart.
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (context) => ThemeProvider(),
@@ -22,13 +15,34 @@ void main() {
       ),
     );
 
-    // Verify that the main app widget renders without crashing.
-    expect(find.byType(MaterialApp), findsOneWidget);
-    expect(find.byType(CalculatorHomePage), findsOneWidget);
+    // Initial state: result display should be '0'
+    final resultFinder = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is AutoSizeText &&
+          widget.style?.fontSize == 80 && // Only the result has this big font
+          widget.data == '0',
+    );
+    expect(resultFinder, findsOneWidget);
 
-    // Verify that the initial result '0' is displayed.
-    // There might be multiple '0's on the screen (e.g., the button and the display)
-    // so we specify that we expect to find at least one.
-    expect(find.text('0'), findsWidgets);
+    // Find the '1' button's text, which is an AutoSizeText widget
+    // that is a descendant of a CalculatorButton.
+    final oneButtonTextFinder = find.descendant(
+      of: find.byType(CalculatorButton),
+      matching: find.byWidgetPredicate(
+        (widget) => widget is AutoSizeText && widget.data == '1'
+      )
+    );
+
+    expect(oneButtonTextFinder, findsOneWidget);
+
+    // Tap the button. Tapping the text inside should trigger the button's onPressed.
+    await tester.tap(oneButtonTextFinder);
+    await tester.pump();
+
+    // After tapping '1', the expression display should be '1'
+    final expressionFinder = find.byKey(const Key('expression'));
+    expect(expressionFinder, findsOneWidget);
+    final expressionWidget = tester.widget<AutoSizeText>(expressionFinder);
+    expect(expressionWidget.data, '1');
   });
 }
