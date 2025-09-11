@@ -1,255 +1,134 @@
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
-import 'package:math_expressions/math_expressions.dart';
-import 'package:provider/provider.dart';
-
-// --- Top-level function for Isolate computation ---
-String _evaluateExpression(String expression) {
-  try {
-    String finalExpression = expression.replaceAll('x', '*').replaceAll('√', 'sqrt');
-    if (finalExpression.contains('/0') && !finalExpression.contains('/0.')) {
-      return 'Tak terhingga';
-    }
-    final p = ShuntingYardParser();
-    final exp = p.parse(finalExpression);
-    final cm = ContextModel();
-    final eval = exp.evaluate(EvaluationType.REAL, cm);
-
-    // Format the result to avoid scientific notation for large numbers
-    // and remove trailing .0 for whole numbers.
-    if (eval is double) {
-        String resultString = eval.toString();
-        if (resultString.endsWith('.0')) {
-            return eval.toInt().toString();
-        }
-        return resultString;
-    }
-    return eval.toString();
-
-  } catch (e) {
-    return 'Error';
-  }
-}
+import 'package:haptic_feedback/haptic_feedback.dart';
 
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
-      child: const CalculatorApp(),
-    ),
-  );
+  runApp(const CalculatorApp());
 }
 
-// --- THEME PROVIDER ---
-class ThemeProvider with ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.dark;
-  ThemeMode get themeMode => _themeMode;
-  void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    notifyListeners();
-  }
-}
-
-// --- CALCULATOR APP ---
 class CalculatorApp extends StatelessWidget {
   const CalculatorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Calculator',
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFE0E5EC),
-        textTheme: GoogleFonts.poppinsTextTheme(textTheme),
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF2E5BFF),
-          secondary: Color(0xFFF06A34),
-          surface: Color(0xFFE0E5EC),
-          onSurface: Colors.black87,
-        ),
+      title: 'Neumorphic Calculator',
+      theme: _buildTheme(Brightness.light),
+      darkTheme: _buildTheme(Brightness.dark),
+      home: const CalculatorScreen(),
+    );
+  }
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final bool isLight = brightness == Brightness.light;
+    final Color backgroundColor = isLight ? const Color(0xFFE0E5EC) : const Color(0xFF2E3239);
+    final Color textColor = isLight ? Colors.black87 : Colors.white70;
+
+    return ThemeData(
+      brightness: brightness,
+      scaffoldBackgroundColor: backgroundColor,
+      textTheme: GoogleFonts.montserratTextTheme(
+        ThemeData(brightness: brightness).textTheme,
+      ).copyWith(
+        displayLarge: TextStyle(fontSize: 72, fontWeight: FontWeight.bold, color: textColor),
+        headlineSmall: TextStyle(fontSize: 24, color: textColor.withOpacity(0.7)),
       ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF292D32),
-        textTheme: GoogleFonts.poppinsTextTheme(textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white)),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF2E5BFF),
-          secondary: Color(0xFFFF8C42),
-          surface: Color(0xFF3A3E44),
-          onSurface: Colors.white,
-        ),
+      colorScheme: ColorScheme.fromSwatch().copyWith(
+        brightness: brightness,
+        primary: isLight ? Colors.deepOrange : Colors.orangeAccent,
+        secondary: isLight ? Colors.red : Colors.redAccent,
+        tertiary: isLight ? Colors.blue : Colors.lightBlueAccent,
       ),
-      themeMode: Provider.of<ThemeProvider>(context).themeMode,
-      home: const CalculatorHomePage(),
     );
   }
 }
 
-// --- CALCULATOR HOME PAGE ---
-class CalculatorHomePage extends StatefulWidget {
-  const CalculatorHomePage({super.key});
+class CalculatorScreen extends StatefulWidget {
+  const CalculatorScreen({super.key});
 
   @override
-  State<CalculatorHomePage> createState() => _CalculatorHomePageState();
+  State<CalculatorScreen> createState() => _CalculatorScreenState();
 }
 
-class _CalculatorHomePageState extends State<CalculatorHomePage> {
+class _CalculatorScreenState extends State<CalculatorScreen> {
   String _expression = '';
-  String _result = '0';
-  bool _isCalculating = false;
+  String _result = '';
   final List<String> _history = [];
-  final _formatter = NumberFormat('#,##0.######');
 
-  String _formatNumber(String value) {
-    if (_isCalculating) return '...';
-    if (value == 'Error' || value == 'Tak terhingga') return value;
-    try {
-      final number = double.parse(value);
-      return _formatter.format(number);
-    } catch (e) {
-      return value;
-    }
-  }
-
-  void _showHistory() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('Riwayat Perhitungan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: _history.isEmpty
-                ? const Center(child: Text('Belum ada riwayat.'))
-                : ListView.builder(
-                    itemCount: _history.length,
-                    itemBuilder: (context, index) {
-                      final parts = _history[index].split(' = ');
-                      return ListTile(
-                        title: Text(parts[0], style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                        trailing: Text(parts[1], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        onTap: () {
-                          setState(() {
-                            _expression = parts[0];
-                            _result = parts[1];
-                          });
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _clearAll() {
-    HapticFeedback.heavyImpact();
+  void _onButtonPressed(String buttonText) {
+    Haptics.vibrate(HapticsType.light);
     setState(() {
-      _expression = '';
-      _result = '0';
-      _history.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Riwayat telah dibersihkan.'), duration: Duration(seconds: 2)),
-      );
+      if (buttonText == 'AC') {
+        _expression = '';
+        _result = '';
+      } else if (buttonText == '⌫') {
+        if (_expression.isNotEmpty) {
+          _expression = _expression.substring(0, _expression.length - 1);
+        }
+      } else if (buttonText == '=') {
+        try {
+          final evaluatedResult = _evalExpression(_expression);
+          if (_expression.isNotEmpty) {
+             _history.add('$_expression = $evaluatedResult');
+          }
+          _result = evaluatedResult;
+        } catch (e) {
+          _result = 'Error';
+        }
+      } else {
+        _expression += buttonText;
+      }
     });
   }
 
-  Future<void> _buttonPressed(String buttonText) async {
-    if (_isCalculating) return;
-    HapticFeedback.lightImpact();
+  String _evalExpression(String expression) {
+    if (expression.isEmpty) return '';
+    expression = expression.replaceAll('×', '*').replaceAll('÷', '/');
+    
+    try {
+      List<double> numbers = expression.split(RegExp(r'[+\-*/]')).map(double.parse).toList();
+      List<String> operators = expression.split(RegExp(r'[0-9.]')).where((s) => s.isNotEmpty).toList();
 
-    if (buttonText == '=') {
-      if (_expression.isEmpty) return;
-      setState(() => _isCalculating = true);
-
-      final result = await compute(_evaluateExpression, _expression);
-      
-      if (!mounted) return;
-
-      if (result == 'Tak terhingga') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membagi dengan nol.'), duration: Duration(seconds: 2)),
-        );
-      }
-      
-      if (result != 'Error' && result != 'Tak terhingga') {
-         if (_history.isEmpty || _history.first != '$_expression = $result') {
-           _history.insert(0, '$_expression = $result');
-         }
-      }
-
-      setState(() {
-        _result = result;
-        _isCalculating = false;
-      });
-    } else {
-       setState(() {
-        if (buttonText == 'C') {
-          _expression = '';
-          _result = '0';
-        } else if (buttonText == '⌫') {
-          if (_expression.isNotEmpty) {
-            _expression = _expression.substring(0, _expression.length - 1);
-          }
-        } else {
-          if (_result != '0' && !(_result == 'Error' || _result == 'Tak terhingga') && _expression.isEmpty) {
-            _expression = buttonText.contains(RegExp(r'[+\-x/]')) ? _result + buttonText : buttonText;
-          } else if (_result == 'Error' || _result == 'Tak terhingga') {
-            _expression = buttonText;
+      for (int i = 0; i < operators.length; i++) {
+        if (operators[i] == '*' || operators[i] == '/') {
+          if (operators[i] == '*') {
+            numbers[i] = numbers[i] * numbers[i + 1];
           } else {
-            _expression += buttonText;
+            numbers[i] = numbers[i] / numbers[i + 1];
           }
-          if (buttonText != '=') _result = '0';
+          numbers.removeAt(i + 1);
+          operators.removeAt(i);
+          i--;
         }
-      });
+      }
+
+      double result = numbers[0];
+      for (int i = 0; i < operators.length; i++) {
+        if (operators[i] == '+') {
+          result += numbers[i + 1];
+        } else if (operators[i] == '-') {
+          result -= numbers[i + 1];
+        }
+      }
+      return result.toString();
+    } catch(e) {
+      return "Error";
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopBar(themeProvider),
             _buildDisplay(),
-            _BuildButtons(onButtonPressed: _buttonPressed, onClearAll: _clearAll),
+            _buildHistory(),
+            _buildKeyboard(),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTopBar(ThemeProvider themeProvider) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.history, size: 28),
-          onPressed: _showHistory,
-          tooltip: 'Lihat Riwayat',
-        ),
-        IconButton(
-          icon: Icon(themeProvider.themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, size: 28),
-          onPressed: themeProvider.toggleTheme,
-          tooltip: 'Ganti Tema',
-        ),
-      ],
     );
   }
 
@@ -257,47 +136,28 @@ class _CalculatorHomePageState extends State<CalculatorHomePage> {
     return Expanded(
       flex: 2,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        alignment: Alignment.bottomRight,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            GestureDetector(
-              onHorizontalDragEnd: (details) {
-                if ((details.primaryVelocity ?? 0) < 0) _buttonPressed('⌫');
-              },
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                reverse: true,
-                child: Text(
-                  _expression.isEmpty ? ' ' : _expression,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.grey.shade600),
-                  textAlign: TextAlign.right,
-                ),
+             SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              reverse: true,
+              child: Text(
+                _expression,
+                style: Theme.of(context).textTheme.headlineSmall,
+                maxLines: 1,
               ),
             ),
             const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                if (_isCalculating || _result == 'Error') return;
-                Clipboard.setData(ClipboardData(text: _result));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Hasil disalin ke clipboard.'), duration: Duration(seconds: 2)),
-                );
-              },
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-                child: SingleChildScrollView(
-                  key: ValueKey<String>(_result),
-                  scrollDirection: Axis.horizontal,
-                  reverse: true,
-                  child: Text(
-                    _formatNumber(_result),
-                    style: Theme.of(context).textTheme.displayLarge,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
+            FittedBox(
+              fit: BoxFit.contain,
+              child: Text(
+                _result.isEmpty ? '0' : _result,
+                style: Theme.of(context).textTheme.displayLarge,
+                maxLines: 1,
               ),
             ),
           ],
@@ -305,165 +165,151 @@ class _CalculatorHomePageState extends State<CalculatorHomePage> {
       ),
     );
   }
-}
 
-class _BuildButtons extends StatelessWidget {
-  final Future<void> Function(String) onButtonPressed;
-  final VoidCallback onClearAll;
-  const _BuildButtons({required this.onButtonPressed, required this.onClearAll});
-
-  @override
-  Widget build(BuildContext context) {
-    final orientation = MediaQuery.of(context).orientation;
-    final isPortrait = orientation == Orientation.portrait;
-
-    return Expanded(
-      flex: isPortrait ? 3 : 2,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              if (!isPortrait)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    NeuButton(text: "sin(", onPressed: onButtonPressed),
-                    NeuButton(text: "cos(", onPressed: onButtonPressed),
-                    NeuButton(text: "tan(", onPressed: onButtonPressed),
-                    NeuButton(text: "log(", onPressed: onButtonPressed),
-                    NeuButton(text: "√(", onPressed: onButtonPressed),
-                  ],
-                ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  NeuButton(text: "C", onPressed: onButtonPressed, onLongPress: onClearAll, textColor: Theme.of(context).colorScheme.secondary),
-                  NeuButton(text: "(", onPressed: onButtonPressed),
-                  NeuButton(text: ")", onPressed: onButtonPressed),
-                  NeuButton(text: "/", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  NeuButton(text: "7", onPressed: onButtonPressed),
-                  NeuButton(text: "8", onPressed: onButtonPressed),
-                  NeuButton(text: "9", onPressed: onButtonPressed),
-                  NeuButton(text: "x", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  NeuButton(text: "4", onPressed: onButtonPressed),
-                  NeuButton(text: "5", onPressed: onButtonPressed),
-                  NeuButton(text: "6", onPressed: onButtonPressed),
-                  NeuButton(text: "-", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  NeuButton(text: "1", onPressed: onButtonPressed),
-                  NeuButton(text: "2", onPressed: onButtonPressed),
-                  NeuButton(text: "3", onPressed: onButtonPressed),
-                  NeuButton(text: "+", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  NeuButton(text: "0", onPressed: onButtonPressed),
-                  NeuButton(text: ".", onPressed: onButtonPressed),
-                  NeuButton(text: "⌫", onPressed: onButtonPressed, textColor: Theme.of(context).colorScheme.secondary),
-                  NeuButton(text: "=", isAccent: true, onPressed: onButtonPressed, textColor: Colors.white),
-                ],
-              ),
-            ],
-          ),
-        ),
+  Widget _buildHistory() {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ListView.builder(
+        reverse: true,
+        scrollDirection: Axis.horizontal,
+        itemCount: _history.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Chip(
+              label: Text(_history[_history.length - 1 - index]),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.5),
+            ),
+          );
+        },
       ),
     );
   }
+
+  Widget _buildKeyboard() {
+    return Expanded(
+      flex: 4,
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: _buttons.length,
+        itemBuilder: (context, index) {
+          final buttonText = _buttons[index];
+          return NeumorphicButton(
+            text: buttonText,
+            onPressed: () => _onButtonPressed(buttonText),
+            textColor: _getButtonTextColor(buttonText),
+          );
+        },
+      ),
+    );
+  }
+
+  Color _getButtonTextColor(String buttonText) {
+    if (['AC', '⌫'].contains(buttonText)) {
+      return Theme.of(context).colorScheme.secondary;
+    }
+    if (['+', '-', '×', '÷', '%'].contains(buttonText)) {
+      return Theme.of(context).colorScheme.primary;
+    }
+    if (buttonText == '=') {
+      return Theme.of(context).colorScheme.tertiary;
+    }
+    return Theme.of(context).textTheme.bodyLarge?.color ?? (Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70);
+  }
+
+  final List<String> _buttons = [
+    'AC', '⌫', '%', '÷',
+    '7', '8', '9', '×',
+    '4', '5', '6', '-',
+    '1', '2', '3', '+',
+    '0', '.', '+/-', '=',
+  ];
 }
 
-class NeuButton extends StatefulWidget {
+class NeumorphicButton extends StatefulWidget {
   final String text;
-  final Function(String) onPressed;
-  final VoidCallback? onLongPress;
-  final bool isAccent;
-  final Color? textColor;
+  final VoidCallback onPressed;
+  final Color textColor;
 
-  const NeuButton({
+  const NeumorphicButton({
     super.key,
     required this.text,
     required this.onPressed,
-    this.onLongPress,
-    this.isAccent = false,
-    this.textColor,
+    this.textColor = Colors.black,
   });
 
   @override
-  State<NeuButton> createState() => _NeuButtonState();
+  _NeumorphicButtonState createState() => _NeumorphicButtonState();
 }
 
-class _NeuButtonState extends State<NeuButton> {
+class _NeumorphicButtonState extends State<NeumorphicButton> {
   bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = Theme.of(context).scaffoldBackgroundColor;
-    final accentColor = Theme.of(context).colorScheme.primary;
+    final bool isLight = Theme.of(context).brightness == Brightness.light;
+    final Color baseColor = Theme.of(context).scaffoldBackgroundColor;
+    final Color? shadowColor = isLight ? Colors.white.withOpacity(0.8) : Colors.black.withOpacity(0.5);
+    final Color? highlightColor = isLight ? Colors.black.withOpacity(0.1) : Colors.white.withOpacity(0.1);
 
-    final boxDecoration = widget.isAccent
-        ? BoxDecoration(
-            color: accentColor,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: _isPressed ? [] : [
-              BoxShadow(color: accentColor.withAlpha((0.5 * 255).round()), offset: const Offset(4, 4), blurRadius: 10),
-              BoxShadow(color: Colors.white.withAlpha((0.5 * 255).round()), offset: const Offset(-4, -4), blurRadius: 10),
-            ],
-          )
-        : BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: _isPressed ? [] : [
-              BoxShadow(
-                color: isDark ? Colors.black.withAlpha((0.4 * 255).round()) : Colors.blueGrey.shade300,
-                offset: const Offset(4, 4), blurRadius: 15, spreadRadius: 1,
-              ),
-              BoxShadow(
-                color: isDark ? Colors.blueGrey.shade800 : Colors.white,
-                offset: const Offset(-4, -4), blurRadius: 15, spreadRadius: 1,
-              ),
-            ],
-          );
-
-    return Flexible( // Changed from Expanded to Flexible
-      child: GestureDetector(
-        onLongPress: widget.onLongPress,
-        child: Listener(
-          onPointerDown: (event) {
-            setState(() => _isPressed = true);
-            widget.onPressed(widget.text);
-          },
-          onPointerUp: (event) => setState(() => _isPressed = false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 100),
-            margin: const EdgeInsets.all(8),
-            decoration: boxDecoration,
-            child: Center(
-              child: Text(
-                widget.text,
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: widget.textColor ?? Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onPressed();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        decoration: BoxDecoration(
+          color: baseColor,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: _isPressed
+              ? [
+                  // Inner shadow effect
+                  BoxShadow(
+                    color: highlightColor!,
+                    offset: const Offset(4, 4),
+                    blurRadius: 15,
+                    spreadRadius: 1,
+                  ),
+                  BoxShadow(
+                    color: shadowColor!,
+                    offset: const Offset(-4, -4),
+                    blurRadius: 15,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : [
+                  // Outer shadow
+                  BoxShadow(
+                    color: shadowColor!,
+                    offset: const Offset(-5, -5),
+                    blurRadius: 15,
+                    spreadRadius: 1,
+                  ),
+                  BoxShadow(
+                    color: highlightColor!,
+                    offset: const Offset(5, 5),
+                    blurRadius: 15,
+                    spreadRadius: 1,
+                  ),
+                ],
+        ),
+        child: Center(
+          child: Text(
+            widget.text,
+            style: GoogleFonts.montserrat(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: widget.textColor,
             ),
           ),
         ),
