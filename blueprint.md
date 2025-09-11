@@ -10,16 +10,16 @@ Tujuan dari proyek ini adalah untuk membangun aplikasi Flutter yang canggih deng
 *   **Desain "Soft UI" (Neumorphic):** Antarmuka yang bersih dan modern jika relevan.
 *   **Interaksi Intuitif & Gestur:** Seperti Tap-to-Copy, Swipe-to-Delete, dll jika diperlukan.
 *   **Ukuran Aplikasi yang Dioptimalkan:**
-    *   Mengaktifkan `minifyEnabled` dan `shrinkResources` untuk menghapus kode dan resource yang tidak terpakai.
-    *   Membangun aplikasi sebagai Android App Bundle (AAB) untuk pengiriman yang dioptimalkan melalui Google Play.
+    *   Mengaktifkan `isMinifyEnabled` dan `isShrinkResources` untuk menghapus kode dan resource yang tidak terpakai.
+    *   Menghasilkan build yang dioptimalkan untuk berbagai arsitektur CPU.
 
 ## CI/CD (Continuous Integration/Continuous Deployment)
 
 *   **Otomatisasi Build dengan GitHub Actions**:
-    *   Mengonfigurasi alur kerja CI/CD (`.github/workflows/build.yml`) untuk secara otomatis membuat Android App Bundle (AAB) setiap kali ada perubahan pada `main branch`.
-    *   Alur kerja ini mencakup penyiapan lingkungan Flutter, instalasi dependensi, dan pembuatan AAB dalam mode rilis (`--release`).
-    *   Hasil build (`app-release.aab`) diunggah sebagai *artifact* untuk kemudahan akses dan deployment.
+    *   Mengonfigurasi alur kerja CI/CD (`.github/workflows/build.yml`) untuk secara otomatis membuat APK terpisah (split APKs) untuk setiap arsitektur CPU setiap kali ada perubahan pada `main branch`.
+    *   Alur kerja ini mencakup penyiapan lingkungan Flutter, instalasi dependensi, dan pembuatan APK dalam mode rilis menggunakan `flutter build apk --release --split-per-abi`.
+    *   Semua hasil build APK diunggah sebagai satu *artifact* (`release-apks.zip`) untuk kemudahan akses dan distribusi manual.
 
 ## Langkah Saat Ini
 
-*   **Implementasi CI/CD:** Menambahkan alur kerja GitHub Actions untuk otomatisasi build AAB yang dioptimalkan.
+*   **Modifikasi CI/CD:** Mengubah alur kerja GitHub Actions dari pembuatan App Bundle (AAB) menjadi pembuatan APK terpisah per arsitektur (`split-per-abi`).
