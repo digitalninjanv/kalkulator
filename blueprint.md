@@ -17,34 +17,42 @@ This document outlines the plan for redesigning a calculator application with a 
 
 Here is a detailed plan for the new features to be implemented:
 
-### 1. Smart History
+### 1. UI Redesign
+
+- **Display Area:**
+    - Large, bold numbers for the result, right-aligned.
+    - Smaller, lighter gray text for the calculation expression above the result.
+    - Smooth animation transitions when numbers change.
+- **Buttons:**
+    - Rounded rectangles with subtle depth shadows.
+    - **Numbers:** Neutral (white or black, depending on theme).
+    - **Operators (+, −, ×, ÷, %):** Accent color (orange).
+    - **Clear/AC and delete:** Red.
+    - **Equal (=):** Highlighted dominant color (blue).
+- **Spacing & Layout:**
+    - Equal padding and margin between buttons.
+    - Consistent alignment and a balanced grid layout.
+- **Dark/Light Mode:**
+    - Both themes will be updated with the new color scheme and higher contrast for better readability.
+- **Interaction:**
+    - Ripple effect or soft shadow on button press.
+- **Mini-History Panel:**
+    - A panel below the display showing the last 2–3 results.
+    - Swiping up on the panel will reveal the full history.
+- **Typography:**
+    - Use of Roboto or Inter for a minimal and elegant look.
+
+### 2. Smart History
 - **Interactive Mini-History:** The history items below the display will be tappable, allowing users to load a previous calculation back into the display.
 - **Searchable Full History:** A full-screen history panel will be implemented with a search bar to quickly find past calculations.
 
-### 2. Automatic Scientific Mode
+### 3. Automatic Scientific Mode
 - **Landscape Layout:** When the device is rotated to landscape, the calculator will automatically expand to include scientific buttons (e.g., `sin`, `cos`, `tan`, `log`, `√`, `x²`).
 - **Portrait Layout:** The portrait mode will remain a simple, standard calculator to avoid clutter for everyday users.
 
-### 3. Currency & Unit Converter
+### 4. Currency & Unit Converter
 - **Dedicated Tab/Screen:** A new section will be added to the app, accessible via a tab or button, for conversions.
 - **Conversion Types:**
-  - **Currency:** IDR ⇆ USD / EUR (using mock/fixed rates initially).
-  - **Length:** cm ⇆ m ⇆ inch.
-  - **Weight:** kg ⇆ lb.
-
-### 4. Quick Copy / Share
-- **Copy on Long-Press:** Users will be able to long-press the result display to instantly copy the value to the clipboard.
-- **Share Button:** An option will be provided to share the result directly to other apps like WhatsApp, Telegram, etc.
-
-### 5. Dynamic Theming
-- **System Theme Sync:** The app will automatically sync with the device’s system-wide light or dark mode.
-- **Custom Accent Colors:** Users will be able to personalize the app by choosing from a predefined set of accent colors (e.g., blue, green, red) to replace the default orange.
-
-## Technical Implementation Plan
-
-1.  **Add Dependencies:** Add `share_plus` for the sharing feature.
-2.  **Scientific Mode:** Use `OrientationBuilder` to create a responsive layout that changes based on device orientation.
-3.  **Converter UI:** Create a new screen/widget for the unit converter and add a `TabBar` or similar navigation.
-4.  **Copy/Share Logic:** Implement `Clipboard` services for copy functionality and integrate the `share_plus` package.
-5.  **History Enhancement:** Add `onTap` handlers to history items and build a new searchable history view.
-6.  **Theming Logic:** Use `provider` to manage the currently selected theme and accent color, allowing it to be changed dynamically.
+    - **Currency:** IDR ⇆ USD / EUR (using mock/fixed rates initially).
+    - **Length:** cm ⇆ m ⇆ inch.
+    - **Weight:** kg ⇆ lb.
