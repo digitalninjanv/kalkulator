@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/main.dart';
@@ -27,11 +26,9 @@ void main() {
     // Find the '1' button's text, which is an AutoSizeText widget
     // that is a descendant of a CalculatorButton.
     final oneButtonTextFinder = find.descendant(
-      of: find.byType(CalculatorButton),
-      matching: find.byWidgetPredicate(
-        (widget) => widget is AutoSizeText && widget.data == '1'
-      )
-    );
+        of: find.byType(CalculatorButton),
+        matching: find.byWidgetPredicate(
+            (widget) => widget is AutoSizeText && widget.data == '1'));
 
     expect(oneButtonTextFinder, findsOneWidget);
 

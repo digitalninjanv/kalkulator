@@ -52,7 +52,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '136251052813',
     projectId: 'chatterbox-comedy',
     authDomain: 'chatterbox-comedy.firebaseapp.com',
-    databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
+    databaseURL:
+        'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
   );
 
@@ -61,7 +62,8 @@ class DefaultFirebaseOptions {
     appId: '1:136251052813:android:ecac34d4488c153904d644',
     messagingSenderId: '136251052813',
     projectId: 'chatterbox-comedy',
-    databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
+    databaseURL:
+        'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
   );
 
@@ -71,7 +73,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '136251052813',
     projectId: 'chatterbox-comedy',
     authDomain: 'chatterbox-comedy.firebaseapp.com',
-    databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
+    databaseURL:
+        'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
   );
 }

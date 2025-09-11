@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:math_expressions/math_expressions.dart';
 
+// --- Main App Setup ---
 void main() {
   runApp(
     ChangeNotifierProvider(
@@ -13,8 +14,9 @@ void main() {
   );
 }
 
+// --- Theme Management ---
 class ThemeProvider with ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.light;
 
   ThemeMode get themeMode => _themeMode;
 
@@ -22,60 +24,45 @@ class ThemeProvider with ChangeNotifier {
     _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     notifyListeners();
   }
-
-  void setSystemTheme() {
-    _themeMode = ThemeMode.system;
-    notifyListeners();
-  }
 }
 
 class CalculatorApp extends StatelessWidget {
-  const CalculatorApp({super.key});
+  const CalculatorApp({Key? key}) : super(key: key);
+
+  static const Color tealColor = Color(0xFF199183);
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = TextTheme(
+      displayLarge: GoogleFonts.montserrat(fontSize: 72, fontWeight: FontWeight.bold),
+      headlineSmall: GoogleFonts.montserrat(fontSize: 28, color: Colors.grey[600]),
+      titleLarge: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.w600),
+      bodyMedium: GoogleFonts.montserrat(fontSize: 20),
+    );
+
+    final lightTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: Colors.white,
+      primaryColor: tealColor,
+      textTheme: textTheme.apply(bodyColor: Colors.black, displayColor: Colors.black),
+      colorScheme: const ColorScheme.light(primary: tealColor, secondary: tealColor),
+    );
+
+    final darkTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+      primaryColor: tealColor,
+      textTheme: textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+      colorScheme: const ColorScheme.dark(primary: tealColor, secondary: tealColor),
+    );
+
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        final ThemeData lightTheme = ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.light,
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF007AFF),
-            secondary: Color(0xFFFF9500),
-            error: Color(0xFFFF3B30),
-            surface: Color(0xFFF2F2F7),
-            onSurface: Colors.black,
-          ),
-          textTheme: GoogleFonts.robotoTextTheme(
-            const TextTheme(
-              displayLarge: TextStyle(fontSize: 80, fontWeight: FontWeight.bold),
-              headlineSmall: TextStyle(fontSize: 32, color: Colors.grey),
-            ),
-          ),
-          scaffoldBackgroundColor: const Color(0xFFF2F2F7),
-        );
-
-        final ThemeData darkTheme = ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.dark,
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF0A84FF),
-            secondary: Color(0xFFFF9F0A),
-            error: Color(0xFFFF453A),
-            surface: Color(0xFF1C1C1E),
-            onSurface: Colors.white,
-          ),
-          textTheme: GoogleFonts.robotoTextTheme(
-            const TextTheme(
-              displayLarge: TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: Colors.white),
-              headlineSmall: TextStyle(fontSize: 32, color: Colors.grey),
-            ),
-          ),
-          scaffoldBackgroundColor: Colors.black,
-        );
-
         return MaterialApp(
-          title: 'Modern Calculator',
+          debugShowCheckedModeBanner: false,
+          title: 'Calculator',
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: themeProvider.themeMode,
@@ -86,8 +73,9 @@ class CalculatorApp extends StatelessWidget {
   }
 }
 
+// --- Calculator Screen ---
 class CalculatorScreen extends StatefulWidget {
-  const CalculatorScreen({super.key});
+  const CalculatorScreen({Key? key}) : super(key: key);
 
   @override
   State<CalculatorScreen> createState() => _CalculatorScreenState();
@@ -96,16 +84,9 @@ class CalculatorScreen extends StatefulWidget {
 class _CalculatorScreenState extends State<CalculatorScreen> {
   String _expression = '';
   String _result = '0';
-  final List<String> _history = [];
-  bool _isResult = false;
 
   void _onButtonPressed(String buttonText) {
     setState(() {
-      if (_isResult && !['+', '−', '×', '÷', '%'].contains(buttonText)) {
-        _expression = '';
-      }
-      _isResult = false;
-
       switch (buttonText) {
         case 'AC':
           _expression = '';
@@ -114,62 +95,60 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         case '⌫':
           if (_expression.isNotEmpty) {
             _expression = _expression.substring(0, _expression.length - 1);
+            if (_expression.isEmpty) _result = '0';
+          }
+          break;
+        case '+/-':
+          if (_result != '0' && _result.isNotEmpty) {
+            if (_result.startsWith('-')) {
+              _result = _result.substring(1);
+            } else {
+              _result = '-$_result';
+            }
+            _expression = _result;
           }
           break;
         case '=':
           try {
             final evaluatedResult = _evalExpression(_expression);
-            if (_expression.isNotEmpty) {
-              _history.add('$_expression = $evaluatedResult');
-            }
             _result = evaluatedResult;
-            _expression = _result;
-            _isResult = true;
           } catch (e) {
             _result = 'Error';
           }
           break;
         default:
-          _expression += buttonText;
+          if (_result == '0' && buttonText != '.') {
+             _expression = buttonText;
+             _result = buttonText;
+          } else {
+             _expression += buttonText;
+          }
       }
     });
   }
 
   String _evalExpression(String expression) {
     if (expression.isEmpty) return '0';
-    expression = expression.replaceAll('×', '*').replaceAll('÷', '/').replaceAll('−', '-');
+    String finalExpression = expression.replaceAll('×', '*').replaceAll('÷', '/');
 
     try {
       Parser p = Parser();
-      Expression exp = p.parse(expression);
+      Expression exp = p.parse(finalExpression);
       ContextModel cm = ContextModel();
       double eval = exp.evaluate(EvaluationType.REAL, cm);
-
-      return eval.toStringAsFixed(eval.truncateToDouble() == eval ? 0 : 2);
+      return eval.toStringAsFixed(eval.truncateToDouble() == eval ? 0 : 4).replaceAll(RegExp(r'\.0000$'), '');
     } catch (e) {
-      return "Error";
+      return 'Error';
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        actions: [
-          IconButton(
-            icon: Icon(themeProvider.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => themeProvider.toggleTheme(),
-            tooltip: 'Toggle Theme',
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: [
+            _buildAppBar(context),
             _buildDisplay(),
             _buildKeyboard(),
           ],
@@ -178,11 +157,54 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     );
   }
 
+  Widget _buildAppBar(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Icon(Icons.menu, size: 30),
+          _buildCalculatorConverterToggle(),
+          IconButton(
+            icon: Icon(themeProvider.themeMode == ThemeMode.light ? Icons.brightness_3 : Icons.brightness_7, size: 30),
+            onPressed: () => themeProvider.toggleTheme(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculatorConverterToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor == Colors.white ? Colors.grey[200] : Colors.grey[800],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: CalculatorApp.tealColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text('Calculator', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Text('Converter', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDisplay() {
     return Expanded(
-      flex: 3, // Gave display less space
+      flex: 2,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 30),
         alignment: Alignment.bottomRight,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -190,12 +212,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           children: [
             AutoSizeText(
               _expression,
-              key: const Key('expression'),
               style: Theme.of(context).textTheme.headlineSmall,
-              maxLines: 1,
+              maxLines: 1, 
               minFontSize: 20,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             AutoSizeText(
               _result,
               style: Theme.of(context).textTheme.displayLarge,
@@ -208,98 +230,97 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     );
   }
 
-
   Widget _buildKeyboard() {
+    final buttonLayout = [
+      ['AC', '⌫', '%', '÷'],
+      ['7', '8', '9', '×'],
+      ['4', '5', '6', '-'],
+      ['1', '2', '3', '+'],
+      ['+/-', '0', '.', '='],
+    ];
+
     return Expanded(
-      flex: 5, // Gave keyboard more space
+      flex: 4,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        child: GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 12, // Reduced spacing
-            mainAxisSpacing: 12, // Reduced spacing
-            childAspectRatio: 1.1, // Adjusted aspect ratio
-          ),
-          itemCount: _buttons.length,
-          itemBuilder: (context, index) {
-            final buttonText = _buttons[index];
-            return CalculatorButton(
-              text: buttonText,
-              onPressed: () => _onButtonPressed(buttonText),
-              color: _getButtonColor(buttonText),
-              textColor: _getButtonTextColor(buttonText),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: buttonLayout.map((row) {
+            return Expanded(
+              child: Row(
+                children: row.map((buttonText) {
+                  return CalculatorButton(
+                    text: buttonText,
+                    onPressed: () => _onButtonPressed(buttonText),
+                    style: _getButtonStyle(buttonText, context),
+                  );
+                }).toList(),
+              ),
             );
-          },
+          }).toList(),
         ),
       ),
     );
   }
 
-  Color _getButtonColor(String buttonText) {
-    final colorScheme = Theme.of(context).colorScheme;
-    if (buttonText == '=') {
-      return colorScheme.primary;
-    }
-    return colorScheme.surface;
-  }
+  ButtonStyle _getButtonStyle(String buttonText, BuildContext context) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    Color backgroundColor = Colors.transparent;
+    Color foregroundColor = isDarkMode ? Colors.white : Colors.black;
 
-  Color _getButtonTextColor(String buttonText) {
-    final colorScheme = Theme.of(context).colorScheme;
-     if (['AC', '⌫'].contains(buttonText)) {
-      return colorScheme.error;
+    if (isDarkMode) {
+      // Dark Mode Colors
+      if (['AC', '⌫', '%', '÷'].contains(buttonText)) {
+        backgroundColor = Colors.grey[400]!;
+        foregroundColor = Colors.black;
+      } else if (['×', '-', '+', '='].contains(buttonText)) {
+        backgroundColor = CalculatorApp.tealColor;
+        foregroundColor = Colors.white;
+      } else {
+        backgroundColor = const Color(0xFF3B3B3B);
+        foregroundColor = Colors.white;
+      }
+    } else {
+      // Light Mode Colors
+       if (['AC', '⌫', '%', '÷', '×', '-', '+', '='].contains(buttonText)) {
+        foregroundColor = CalculatorApp.tealColor;
+      }
     }
-    if (['+', '−', '×', '÷', '%'].contains(buttonText)) {
-      return colorScheme.secondary;
-    }
-    if (buttonText == '=') {
-      return Colors.white;
-    }
-    return colorScheme.onSurface;
-  }
 
-  final List<String> _buttons = [
-    'AC', '⌫', '%', '÷',
-    '7', '8', '9', '×',
-    '4', '5', '6', '−',
-    '1', '2', '3', '+',
-    '00', '0', '.', '=',
-  ];
+    return TextButton.styleFrom(
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      shape: const CircleBorder(),
+      textStyle: GoogleFonts.montserrat(fontSize: 28, fontWeight: FontWeight.w600),
+    );
+  }
 }
 
+// --- Calculator Button Widget ---
 class CalculatorButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
-  final Color color;
-  final Color textColor;
+  final ButtonStyle style;
 
   const CalculatorButton({
-    super.key,
+    Key? key,
     required this.text,
     required this.onPressed,
-    required this.color,
-    required this.textColor,
-  });
+    required this.style,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: textColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 0,
-      ),
-      child: Center(
-        child: AutoSizeText(
-          text,
-          style: GoogleFonts.roboto(fontSize: 32, fontWeight: FontWeight.w500),
-          maxLines: 1,
-          minFontSize: 18,
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(6.0),
+        child: TextButton(
+          onPressed: onPressed,
+          style: style,
+          child: Center(
+            child: text == '⌫' 
+                ? const Icon(Icons.backspace_outlined, size: 28) 
+                : Text(text),
+          ),
         ),
       ),
     );

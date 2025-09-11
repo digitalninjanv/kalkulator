@@ -1,58 +1,33 @@
-# Project Blueprint
+# Application Blueprint
 
 ## Overview
 
-This document outlines the plan for redesigning a calculator application with a modern, neumorphic user interface. The goal is to create a visually appealing, intuitive, and feature-rich calculator that provides an exceptional user experience.
+This document outlines the structure, design, and features of the Flutter application. Its purpose is to create a stable, efficient, and high-performance application with a modern and visually appealing user interface.
 
-## Implemented Features
+## Current State Analysis
 
-- **Neumorphic Design:** A modern, soft UI with a tactile feel.
-- **Responsive Layout:** Adapts to portrait and landscape modes.
-- **Color-Coded Buttons:** Intuitive colors for operators, actions, and the equals button.
-- **Interactive Feedback:** Ripple effect and haptic feedback on button presses.
-- **Basic History:** An inline, scrollable view of recent calculations.
-- **Dynamic Sizing:** Expression and result fields that resize to prevent overflow.
+The initial project is a standard Flutter counter app. To improve it, I will perform the following actions:
+- **Code Refactoring:** Enhance code quality and readability.
+- **State Management:** Implement a robust solution for managing application state.
+- **UI/UX Modernization:** Update the user interface to follow Material Design 3 principles.
+- **Performance Optimization:** Apply best practices to ensure the app runs smoothly.
 
-## New Feature Plan
+## Plan for Improvement
 
-Here is a detailed plan for the new features to be implemented:
+1.  **Add Dependencies:** Include necessary packages for state management and modern typography (`provider`, `google_fonts`).
+2.  **Implement Theme Management:**
+    *   Create a `ThemeProvider` class to manage light and dark modes.
+    *   Define `ThemeData` for both light and dark themes using `ColorScheme.fromSeed` for a Material 3 look.
+    *   Incorporate custom fonts using `google_fonts`.
+3.  **Refactor the Main Application:**
+    *   Wrap the application in a `ChangeNotifierProvider` to make the theme state available throughout the widget tree.
+    *   Update `MyApp` to consume the `ThemeProvider` and apply the correct theme.
+4.  **Enhance the Home Page:**
+    *   Rebuild `MyHomePage` to demonstrate the new theme and state management.
+    *   Add a theme toggle button to the `AppBar`.
+    *   Showcase themed widgets and custom fonts.
+5.  **Code Cleanup and Verification:**
+    *   Run `dart format .` to ensure consistent code style.
+    *   Run `flutter analyze` to identify and fix any potential issues.
 
-### 1. UI Redesign
-
-- **Display Area:**
-    - Large, bold numbers for the result, right-aligned.
-    - Smaller, lighter gray text for the calculation expression above the result.
-    - Smooth animation transitions when numbers change.
-- **Buttons:**
-    - Rounded rectangles with subtle depth shadows.
-    - **Numbers:** Neutral (white or black, depending on theme).
-    - **Operators (+, −, ×, ÷, %):** Accent color (orange).
-    - **Clear/AC and delete:** Red.
-    - **Equal (=):** Highlighted dominant color (blue).
-- **Spacing & Layout:**
-    - Equal padding and margin between buttons.
-    - Consistent alignment and a balanced grid layout.
-- **Dark/Light Mode:**
-    - Both themes will be updated with the new color scheme and higher contrast for better readability.
-- **Interaction:**
-    - Ripple effect or soft shadow on button press.
-- **Mini-History Panel:**
-    - A panel below the display showing the last 2–3 results.
-    - Swiping up on the panel will reveal the full history.
-- **Typography:**
-    - Use of Roboto or Inter for a minimal and elegant look.
-
-### 2. Smart History
-- **Interactive Mini-History:** The history items below the display will be tappable, allowing users to load a previous calculation back into the display.
-- **Searchable Full History:** A full-screen history panel will be implemented with a search bar to quickly find past calculations.
-
-### 3. Automatic Scientific Mode
-- **Landscape Layout:** When the device is rotated to landscape, the calculator will automatically expand to include scientific buttons (e.g., `sin`, `cos`, `tan`, `log`, `√`, `x²`).
-- **Portrait Layout:** The portrait mode will remain a simple, standard calculator to avoid clutter for everyday users.
-
-### 4. Currency & Unit Converter
-- **Dedicated Tab/Screen:** A new section will be added to the app, accessible via a tab or button, for conversions.
-- **Conversion Types:**
-    - **Currency:** IDR ⇆ USD / EUR (using mock/fixed rates initially).
-    - **Length:** cm ⇆ m ⇆ inch.
-    - **Weight:** kg ⇆ lb.
+This plan will establish a solid foundation for a scalable and maintainable Flutter application.
