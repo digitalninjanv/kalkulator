@@ -1,8 +1,10 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:math_expressions/math_expressions.dart';
+import 'package:provider/provider.dart';
+
+import 'converter_screen.dart';
 
 void main() {
   runApp(
@@ -10,6 +12,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => CalculatorProvider()),
+        ChangeNotifierProvider(create: (_) => ConverterProvider()),
       ],
       child: const MyApp(),
     ),
@@ -47,41 +50,34 @@ class CalculatorProvider with ChangeNotifier {
       }
     } else if (buttonText == '=') {
       try {
-        String finalExpression = _expression;
-        finalExpression = finalExpression.replaceAll('×', '*');
-        finalExpression = finalExpression.replaceAll('÷', '/');
-
+        String finalExpression = _expression.replaceAll('×', '*').replaceAll('÷', '/');
         Parser p = Parser();
         Expression exp = p.parse(finalExpression);
         ContextModel cm = ContextModel();
         double eval = exp.evaluate(EvaluationType.REAL, cm);
-
         _result = eval.toStringAsFixed(eval.truncateToDouble() == eval ? 0 : 2);
       } catch (e) {
         _result = 'Error';
       }
     } else if (buttonText == '%') {
-        if (_expression.isNotEmpty) {
-            try {
-                Parser p = Parser();
-                Expression exp = p.parse(_expression);
-                ContextModel cm = ContextModel();
-                double eval = exp.evaluate(EvaluationType.REAL, cm);
-                _result = (eval / 100).toString();
-                _expression = _result;
-            } catch (e) {
-                _result = 'Error';
-            }
+      if (_expression.isNotEmpty) {
+        try {
+          Parser p = Parser();
+          Expression exp = p.parse(_expression);
+          ContextModel cm = ContextModel();
+          double eval = exp.evaluate(EvaluationType.REAL, cm);
+          _result = (eval / 100).toString();
+          _expression = _result;
+        } catch (e) {
+          _result = 'Error';
         }
-    }
-    else {
+      }
+    } else {
       _expression += buttonText;
     }
-
     notifyListeners();
   }
 }
-
 
 // 3. Main App Widget
 class MyApp extends StatelessWidget {
@@ -92,11 +88,13 @@ class MyApp extends StatelessWidget {
     const Color primarySeedColor = Color(0xFF008080); // Teal
 
     final TextTheme appTextTheme = TextTheme(
-      displayLarge: GoogleFonts.roboto(fontSize: 57, fontWeight: FontWeight.bold),
-      titleLarge: GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w500),
-      bodyMedium: GoogleFonts.roboto(fontSize: 16),
-      headlineSmall: GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w400)
-    );
+        displayLarge:
+            GoogleFonts.roboto(fontSize: 57, fontWeight: FontWeight.bold),
+        titleLarge:
+            GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w500),
+        bodyMedium: GoogleFonts.roboto(fontSize: 16),
+        headlineSmall:
+            GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w400));
 
     final ThemeData lightTheme = ThemeData(
       useMaterial3: true,
@@ -112,11 +110,10 @@ class MyApp extends StatelessWidget {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primarySeedColor,
-        brightness: Brightness.dark,
-        background: const Color(0xFF1c1c1c)
-      ),
-       textTheme: appTextTheme,
+          seedColor: primarySeedColor,
+          brightness: Brightness.dark,
+          background: const Color(0xFF1c1c1c)),
+      textTheme: appTextTheme,
     );
 
     return Consumer<ThemeProvider>(
@@ -140,8 +137,6 @@ class CalculatorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final calculatorProvider = Provider.of<CalculatorProvider>(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -165,57 +160,102 @@ class CalculatorScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Text('Converter', style: TextStyle(color: colorScheme.onBackground.withOpacity(0.6), fontSize: 16)),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const ConverterScreen()),
+                );
+              },
+              child: Text('Converter',
+                  style: TextStyle(
+                      color: colorScheme.onBackground.withOpacity(0.6),
+                      fontSize: 16)),
+            ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(themeProvider.themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-            onPressed: () => themeProvider.toggleTheme(),
+          // Use a Consumer just for the button to prevent the whole AppBar from rebuilding
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) => IconButton(
+              icon: Icon(themeProvider.themeMode == ThemeMode.dark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined),
+              onPressed: () => context.read<ThemeProvider>().toggleTheme(),
+            ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      body: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: [
-            _buildDisplay(calculatorProvider, colorScheme),
-            _buildButtonPad(calculatorProvider, colorScheme),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDisplay(CalculatorProvider provider, ColorScheme colorScheme) {
-    return Expanded(
-      flex: 2,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-        alignment: Alignment.bottomRight,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            AutoSizeText(
-              provider.expression.isEmpty ? '0' : provider.expression,
-              maxLines: 2,
-              style: TextStyle(fontSize: 32, color: colorScheme.onBackground.withOpacity(0.6)),
+            // Display rebuilds based on CalculatorProvider changes
+            Expanded(
+              flex: 3,
+              child: DisplayArea(),
             ),
-            const SizedBox(height: 10),
-            AutoSizeText(
-              provider.result.isEmpty ? '' : provider.result,
-              maxLines: 1,
-              style: TextStyle(fontSize: 64, fontWeight: FontWeight.bold, color: colorScheme.onBackground),
+            // ButtonPad is constant and does not need to rebuild
+            Expanded(
+              flex: 5,
+              child: ButtonPad(),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildButtonPad(CalculatorProvider provider, ColorScheme colorScheme) {
-    final buttonMap = [
+// Widget for the display area, rebuilds when expression/result changes.
+class DisplayArea extends StatelessWidget {
+  const DisplayArea({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    // Use a Consumer to only rebuild the text widgets
+    return Consumer<CalculatorProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+          alignment: Alignment.bottomRight,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AutoSizeText(
+                provider.expression.isEmpty ? '0' : provider.expression,
+                maxLines: 2,
+                style: TextStyle(
+                    fontSize: 32,
+                    color: colorScheme.onBackground.withOpacity(0.6)),
+              ),
+              const SizedBox(height: 10),
+              AutoSizeText(
+                provider.result,
+                maxLines: 1,
+                style: TextStyle(
+                    fontSize: 64,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onBackground),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Widget for the button pad, which is constant.
+class ButtonPad extends StatelessWidget {
+  const ButtonPad({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<List<String>> buttonMap = [
       ['AC', '⌫', '%', '÷'],
       ['7', '8', '9', '×'],
       ['4', '5', '6', '-'],
@@ -223,84 +263,80 @@ class CalculatorScreen extends StatelessWidget {
       ['+/-', '0', '.', '=']
     ];
 
-    return Expanded(
-      flex: 3,
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          crossAxisSpacing: 15,
-          mainAxisSpacing: 15,
-        ),
-        itemCount: buttonMap.length * buttonMap[0].length,
-        itemBuilder: (context, index) {
-          final int row = index ~/ 4;
-          final int col = index % 4;
-          final String text = buttonMap[row][col];
-          return CalculatorButton(
-            text: text,
-            onPressed: () => provider.buttonPressed(text),
-            colorScheme: colorScheme,
-          );
-        },
-      ),
+    return Column(
+      children: buttonMap.map((row) {
+        return Expanded(
+          child: Row(
+            children: row.map((text) {
+              return Expanded(
+                // Use context.read inside onPressed so the button itself doesn't listen for changes
+                child: CalculatorButton(
+                  text: text,
+                  onPressed: () =>
+                      context.read<CalculatorProvider>().buttonPressed(text),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      }).toList(),
     );
   }
 }
 
-
-// 5. Calculator Button Widget
+// Calculator Button Widget
 class CalculatorButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
-  final ColorScheme colorScheme;
 
-  const CalculatorButton({
-    super.key,
-    required this.text,
-    required this.onPressed,
-    required this.colorScheme,
-  });
+  const CalculatorButton({super.key, required this.text, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    final bool isOperator = ['÷', '×', '-', '+', '='].contains(text);
+    final colorScheme = Theme.of(context).colorScheme;
+    final bool isOperator = ['÷', '×', '-', '+'].contains(text);
+    final bool isEqual = text == '=';
     final bool isTopRow = ['AC', '⌫', '%'].contains(text);
-    
+
     Color buttonColor;
     Color textColor;
-    BoxShape shape = BoxShape.rectangle;
-    
-    if (isOperator) {
+    BoxShape shape = BoxShape.circle;
+
+    if (isEqual) {
       buttonColor = colorScheme.primary;
       textColor = colorScheme.onPrimary;
-      shape = BoxShape.circle;
+      shape = BoxShape.rectangle;
+    } else if (isOperator) {
+      buttonColor = colorScheme.primary.withOpacity(0.8);
+      textColor = colorScheme.onPrimary;
     } else if (isTopRow) {
       buttonColor = colorScheme.secondaryContainer;
       textColor = colorScheme.onSecondaryContainer;
-      shape = BoxShape.circle;
     } else {
-       buttonColor = colorScheme.surfaceVariant.withOpacity(0.3);
-       textColor = colorScheme.onSurfaceVariant;
-       shape = BoxShape.circle;
+      buttonColor = colorScheme.surfaceVariant.withOpacity(0.3);
+      textColor = colorScheme.onSurfaceVariant;
     }
 
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(100), // for ripple effect
-      child: Container(
-        decoration: BoxDecoration(
-          color: buttonColor,
-          shape: shape,
-          borderRadius: shape == BoxShape.rectangle ? BorderRadius.circular(24) : null,
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w500,
-              color: textColor,
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(100),
+        child: Container(
+          decoration: BoxDecoration(
+            color: buttonColor,
+            shape: shape,
+            borderRadius:
+                shape == BoxShape.rectangle ? BorderRadius.circular(24) : null,
+          ),
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
           ),
         ),
