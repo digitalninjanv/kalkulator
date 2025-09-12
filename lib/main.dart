@@ -51,10 +51,12 @@ class CalculatorProvider with ChangeNotifier {
     } else if (buttonText == '=') {
       try {
         String finalExpression = _expression.replaceAll('×', '*').replaceAll('÷', '/');
-        Parser p = Parser();
-        Expression exp = p.parse(finalExpression);
-        ContextModel cm = ContextModel();
-        double eval = exp.evaluate(EvaluationType.REAL, cm);
+        final parser = ShuntingYardParser();
+        final expression = parser.parse(finalExpression);
+        final evaluator = RealEvaluator();
+        expression.accept(evaluator); // This populates the evaluator
+        final double eval = evaluator.value; // The result is in the 'value' property
+
         _result = eval.toStringAsFixed(eval.truncateToDouble() == eval ? 0 : 2);
       } catch (e) {
         _result = 'Error';
@@ -62,10 +64,12 @@ class CalculatorProvider with ChangeNotifier {
     } else if (buttonText == '%') {
       if (_expression.isNotEmpty) {
         try {
-          Parser p = Parser();
-          Expression exp = p.parse(_expression);
-          ContextModel cm = ContextModel();
-          double eval = exp.evaluate(EvaluationType.REAL, cm);
+          final parser = ShuntingYardParser();
+          final expression = parser.parse(_expression);
+          final evaluator = RealEvaluator();
+          expression.accept(evaluator); // This populates the evaluator
+          final double eval = evaluator.value; // The result is in the 'value' property
+
           _result = (eval / 100).toString();
           _expression = _result;
         } catch (e) {
@@ -78,6 +82,7 @@ class CalculatorProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+
 
 // 3. Main App Widget
 class MyApp extends StatelessWidget {
@@ -112,7 +117,7 @@ class MyApp extends StatelessWidget {
       colorScheme: ColorScheme.fromSeed(
           seedColor: primarySeedColor,
           brightness: Brightness.dark,
-          background: const Color(0xFF1c1c1c)),
+          surface: const Color(0xFF1c1c1c)),
       textTheme: appTextTheme,
     );
 
@@ -140,9 +145,9 @@ class CalculatorScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: colorScheme.background,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: const Icon(Icons.menu),
         title: Row(
@@ -170,7 +175,7 @@ class CalculatorScreen extends StatelessWidget {
               },
               child: Text('Converter',
                   style: TextStyle(
-                      color: colorScheme.onBackground.withOpacity(0.6),
+                      color: colorScheme.onSurface.withAlpha((0.6 * 255).round()), // FIX: withOpacity deprecated
                       fontSize: 16)),
             ),
           ],
@@ -230,7 +235,7 @@ class DisplayArea extends StatelessWidget {
                 maxLines: 2,
                 style: TextStyle(
                     fontSize: 32,
-                    color: colorScheme.onBackground.withOpacity(0.6)),
+                    color: colorScheme.onSurface.withAlpha((0.6 * 255).round())), // FIX: withOpacity deprecated
               ),
               const SizedBox(height: 10),
               AutoSizeText(
@@ -239,7 +244,7 @@ class DisplayArea extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 64,
                     fontWeight: FontWeight.bold,
-                    color: colorScheme.onBackground),
+                    color: colorScheme.onSurface),
               ),
             ],
           ),
@@ -307,14 +312,14 @@ class CalculatorButton extends StatelessWidget {
       textColor = colorScheme.onPrimary;
       shape = BoxShape.rectangle;
     } else if (isOperator) {
-      buttonColor = colorScheme.primary.withOpacity(0.8);
+      buttonColor = colorScheme.primary.withAlpha(200); // More precise opacity
       textColor = colorScheme.onPrimary;
     } else if (isTopRow) {
       buttonColor = colorScheme.secondaryContainer;
       textColor = colorScheme.onSecondaryContainer;
     } else {
-      buttonColor = colorScheme.surfaceVariant.withOpacity(0.3);
-      textColor = colorScheme.onSurfaceVariant;
+      buttonColor = colorScheme.surfaceContainerHighest.withAlpha(80); // More precise opacity
+      textColor = colorScheme.onSurface;
     }
 
     return Padding(

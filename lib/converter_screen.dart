@@ -1,93 +1,133 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'main.dart';
-
-// 1. Converter Logic Provider
+// 1. Provider for Converter Logic
 class ConverterProvider with ChangeNotifier {
-  String _selectedCategory = 'Length';
+  String _inputValue = '0';
+  String _outputValue = '0';
   String _fromUnit = 'Meters';
   String _toUnit = 'Kilometers';
-  String _inputValue = '';
-  String _result = '';
+  String _conversionType = 'Length';
 
-  String get selectedCategory => _selectedCategory;
-  String get fromUnit => _fromUnit;
-  String get toUnit => _toUnit;
-  String get inputValue => _inputValue;
-  String get result => _result;
-
-  final Map<String, List<String>> categories = {
-    'Length': ['Meters', 'Kilometers', 'Centimeters', 'Inches', 'Feet'],
+  final Map<String, List<String>> unitTypes = {
+    'Length': ['Meters', 'Kilometers', 'Miles', 'Feet'],
     'Weight': ['Grams', 'Kilograms', 'Pounds', 'Ounces'],
     'Temperature': ['Celsius', 'Fahrenheit', 'Kelvin'],
   };
 
-  void setCategory(String category) {
-    if (_selectedCategory == category) return;
-    _selectedCategory = category;
-    _fromUnit = categories[category]![0];
-    _toUnit = categories[category]![1];
-    _inputValue = '';
-    _result = '';
+  // Conversion factors (to a base unit, e.g., meters for length)
+  final Map<String, double> _conversionFactors = {
+    // Length (base: Meter)
+    'Meters': 1.0,
+    'Kilometers': 1000.0,
+    'Miles': 1609.34,
+    'Feet': 0.3048,
+
+    // Weight (base: Gram)
+    'Grams': 1.0,
+    'Kilograms': 1000.0,
+    'Pounds': 453.592,
+    'Ounces': 28.3495,
+  };
+
+  String get inputValue => _inputValue;
+  String get outputValue => _outputValue;
+  String get fromUnit => _fromUnit;
+  String get toUnit => _toUnit;
+  String get conversionType => _conversionType;
+  List<String> get currentUnits => unitTypes[_conversionType]!;
+
+  void onUnitChanged(String? newUnit, {required bool isFromUnit}) {
+    if (newUnit == null) return;
+    if (isFromUnit) {
+      _fromUnit = newUnit;
+    } else {
+      _toUnit = newUnit;
+    }
+    _convert();
     notifyListeners();
   }
 
-  void setFromUnit(String unit) {
-    if (_fromUnit == unit) return;
-    _fromUnit = unit;
-    _convert();
+  void onConversionTypeChanged(String? newType) {
+    if (newType == null) return;
+    _conversionType = newType;
+    _fromUnit = unitTypes[newType]![0];
+    _toUnit = unitTypes[newType]![1];
+    _inputValue = '0';
+    _outputValue = '0';
+    notifyListeners();
   }
 
-  void setToUnit(String unit) {
-    if (_toUnit == unit) return;
-    _toUnit = unit;
+  void onInput(String value) {
+    if (_inputValue == '0' && value != '.') {
+      _inputValue = value;
+    } else if (value == '⌫') {
+      _inputValue = _inputValue.length > 1
+          ? _inputValue.substring(0, _inputValue.length - 1)
+          : '0';
+    } else if (value == 'AC') {
+      _inputValue = '0';
+      _outputValue = '0';
+    } else if (_inputValue.contains('.') && value == '.') {
+      // Do nothing if trying to add a second decimal point
+      return;
+    } else {
+      _inputValue += value;
+    }
     _convert();
-  }
-
-  void setInputValue(String value) {
-    if (_inputValue == value) return;
-    _inputValue = value;
-    _convert();
+    notifyListeners();
   }
 
   void _convert() {
-    if (_inputValue.isEmpty) {
-      _result = '';
-      notifyListeners();
-      return;
-    }
-
-    double? input = double.tryParse(_inputValue);
+    final double? input = double.tryParse(_inputValue);
     if (input == null) {
-      _result = 'Invalid Input';
-      notifyListeners();
+      _outputValue = 'Error';
       return;
     }
 
-    double output = 0;
-
-    if (_selectedCategory == 'Length') {
-      double meters = _toMeters(input, _fromUnit);
-      output = _fromMeters(meters, _toUnit);
-    } else if (_selectedCategory == 'Weight') {
-      double grams = _toGrams(input, _fromUnit);
-      output = _fromGrams(grams, _toUnit);
-    } else if (_selectedCategory == 'Temperature') {
-      double celsius = _toCelsius(input, _fromUnit);
-      output = _fromCelsius(celsius, _toUnit);
+    // Handle Temperature separately
+    if (_conversionType == 'Temperature') {
+      _outputValue = _convertTemperature(input, _fromUnit, _toUnit);
+      return;
     }
 
-    _result = output.toStringAsFixed(2);
-    notifyListeners();
+    // Standard conversion
+    final double baseValue = input * _conversionFactors[_fromUnit]!;
+    final double convertedValue = baseValue / _conversionFactors[_toUnit]!;
+
+    _outputValue = convertedValue.toStringAsFixed(4);
   }
 
-  double _toMeters(double v, String u) => v * {'Meters': 1, 'Kilometers': 1000, 'Centimeters': 0.01, 'Inches': 0.0254, 'Feet': 0.3048}[u]!;
-  double _fromMeters(double m, String u) => m / {'Meters': 1, 'Kilometers': 1000, 'Centimeters': 0.01, 'Inches': 0.0254, 'Feet': 0.3048}[u]!;
-  double _toGrams(double v, String u) => v * {'Grams': 1, 'Kilograms': 1000, 'Pounds': 453.592, 'Ounces': 28.3495}[u]!;
-  double _fromGrams(double g, String u) => g / {'Grams': 1, 'Kilograms': 1000, 'Pounds': 453.592, 'Ounces': 28.3495}[u]!;
-  double _toCelsius(double v, String u) => {'Celsius': v, 'Fahrenheit': (v - 32) * 5/9, 'Kelvin': v - 273.15}[u]!;
-  double _fromCelsius(double c, String u) => {'Celsius': c, 'Fahrenheit': (c * 9/5) + 32, 'Kelvin': c + 273.15}[u]!;
+  String _convertTemperature(double value, String from, String to) {
+    double celsius;
+
+    // First, convert input to Celsius
+    switch (from) {
+      case 'Fahrenheit':
+        celsius = (value - 32) * 5 / 9;
+        break;
+      case 'Kelvin':
+        celsius = value - 273.15;
+        break;
+      default: // Celsius
+        celsius = value;
+    }
+
+    double result;
+    // Then, convert from Celsius to the target unit
+    switch (to) {
+      case 'Fahrenheit':
+        result = celsius * 9 / 5 + 32;
+        break;
+      case 'Kelvin':
+        result = celsius + 273.15;
+        break;
+      default: // Celsius
+        result = celsius;
+    }
+
+    return result.toStringAsFixed(2);
+  }
 }
 
 // 2. Converter Screen UI
@@ -99,158 +139,202 @@ class ConverterScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: colorScheme.background,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).pop()),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Text('Calculator', style: TextStyle(color: colorScheme.onBackground.withOpacity(0.6), fontSize: 16))),
+              onTap: () => Navigator.of(context).pop(),
+              child: Text('Calculator',
+                  style: TextStyle(
+                      color: colorScheme.onSurface.withAlpha((0.6 * 255).round()), // FIX: withOpacity deprecated
+                      fontSize: 16)),
+            ),
             const SizedBox(width: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(20)),
-              child: Text('Converter', style: TextStyle(color: colorScheme.onPrimary, fontSize: 16)),
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Converter',
+                style: TextStyle(color: colorScheme.onPrimary, fontSize: 16),
+              ),
             ),
           ],
         ),
         actions: [
+          // Keep the same theme toggle button
           Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) => IconButton(
-              icon: Icon(themeProvider.themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+            builder: (context, themeProvider, _) => IconButton(
+              icon: Icon(themeProvider.themeMode == ThemeMode.dark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined),
               onPressed: () => context.read<ThemeProvider>().toggleTheme(),
             ),
           ),
         ],
       ),
-      body: const Padding(
-        padding: EdgeInsets.all(16.0),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
-          children: [CategorySelector(), SizedBox(height: 20), ConversionCard(isFrom: true), SizedBox(height: 20), ConversionCard(isFrom: false)],
+          children: const [
+            Expanded(flex: 3, child: ConversionDisplay()),
+            Expanded(flex: 4, child: ConverterNumpad()),
+          ],
         ),
       ),
     );
   }
 }
 
-class CategorySelector extends StatelessWidget {
-  const CategorySelector({super.key});
+class ConversionDisplay extends StatelessWidget {
+  const ConversionDisplay({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final converter = Provider.of<ConverterProvider>(context);
     final colorScheme = Theme.of(context).colorScheme;
-    // This widget only needs to read the provider to fire events, so we can use context.read
-    final provider = context.read<ConverterProvider>();
-    // We use a Selector to only rebuild when the selectedCategory or the list of categories changes.
-    return Selector<ConverterProvider, String>(
-      selector: (_, p) => p.selectedCategory,
-      builder: (context, selectedCategory, child) {
-         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(color: colorScheme.surfaceVariant.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
-          child: DropdownButton<String>(
-            value: selectedCategory,
-            onChanged: (String? newValue) => provider.setCategory(newValue!),
-            items: provider.categories.keys.map<DropdownMenuItem<String>>((v) => DropdownMenuItem<String>(value: v, child: Text(v))).toList(),
-            isExpanded: true,
-            underline: const SizedBox(),
-            style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant),
-            dropdownColor: colorScheme.surfaceVariant,
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        DropdownButton<String>(
+          value: converter.conversionType,
+          onChanged: (newType) =>
+              converter.onConversionTypeChanged(newType),
+          items: converter.unitTypes.keys
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value, style: TextStyle(color: colorScheme.primary, fontSize: 20)),
+            );
+          }).toList(),
+            dropdownColor: colorScheme.surfaceContainerHighest,
+            underline: Container(
+            height: 2,
+            color: colorScheme.primary, 
           ),
-        );
-      },
+        ),
+        _buildUnitRow(context, isFromUnit: true),
+        const Icon(Icons.swap_vert, size: 30, color: Colors.grey),
+        _buildUnitRow(context, isFromUnit: false),
+      ],
+    );
+  }
+
+  Widget _buildUnitRow(BuildContext context, {required bool isFromUnit}) {
+    final converter = Provider.of<ConverterProvider>(context, listen: false);
+    final textStyle = TextStyle(fontSize: 28, color: Theme.of(context).colorScheme.onSurface);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        DropdownButton<String>(
+          value: isFromUnit ? converter.fromUnit : converter.toUnit,
+          dropdownColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          onChanged: (newUnit) =>
+              converter.onUnitChanged(newUnit, isFromUnit: isFromUnit),
+          items: converter.currentUnits
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface),),
+            );
+          }).toList(),
+        ),
+        Text(
+          isFromUnit ? converter.inputValue : converter.outputValue,
+          style: textStyle,
+        ),
+      ],
     );
   }
 }
 
-class ConversionCard extends StatefulWidget {
-  final bool isFrom;
-  const ConversionCard({super.key, required this.isFrom});
+class ConverterNumpad extends StatelessWidget {
+  const ConverterNumpad({super.key});
 
   @override
-  State<ConversionCard> createState() => _ConversionCardState();
+  Widget build(BuildContext context) {
+    final buttonMap = [
+      ['7', '8', '9'],
+      ['4', '5', '6'],
+      ['1', '2', '3'],
+      ['AC', '0', '.'],
+      ['⌫'] // Backspace on its own row
+    ];
+
+    final converter = Provider.of<ConverterProvider>(context, listen: false);
+
+    return Column(
+      children: buttonMap.map((row) {
+        return Expanded(
+          child: Row(
+            children: row.map((text) {
+              // Special case for the wider backspace button
+              if (text == '⌫') {
+                return Expanded(
+                  flex: 2, // Take up 2/3 of the space
+                  child: CalculatorButton(
+                    text: text,
+                    onPressed: () => converter.onInput(text),
+                  ),
+                );
+              }
+              return Expanded(
+                child: CalculatorButton(
+                  text: text,
+                  onPressed: () => converter.onInput(text),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      }).toList(),
+    );
+  }
 }
 
-class _ConversionCardState extends State<ConversionCard> {
-  late final TextEditingController _controller;
+// Reusing the CalculatorButton from the main screen for consistency
+class CalculatorButton extends StatelessWidget {
+  final String text;
+  final VoidCallback onPressed;
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isFrom) {
-      _controller = TextEditingController();
-    }
-  }
-
-  @override
-  void dispose() {
-    if (widget.isFrom) {
-      _controller.dispose();
-    }
-    super.dispose();
-  }
+  const CalculatorButton({super.key, required this.text, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final provider = context.read<ConverterProvider>();
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colorScheme.surfaceVariant.withOpacity(0.3), borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Selector<ConverterProvider, List<String>>(
-              selector: (_, p) => [p.fromUnit, p.toUnit, p.selectedCategory], // Rebuild dropdown when units or category change
-              builder: (context, units, child) {
-                return DropdownButton<String>(
-                  value: widget.isFrom ? units[0] : units[1],
-                  onChanged: (String? newValue) {
-                    if (newValue == null) return;
-                    widget.isFrom ? provider.setFromUnit(newValue) : provider.setToUnit(newValue);
-                  },
-                  items: provider.categories[units[2]]!.map<DropdownMenuItem<String>>((v) => DropdownMenuItem<String>(value: v, child: Text(v))).toList(),
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
-                  dropdownColor: colorScheme.surfaceVariant,
-                );
-              }),
-          const SizedBox(height: 10),
-          if (widget.isFrom)
-            Selector<ConverterProvider, String>(
-              selector: (_, p) => p.inputValue,
-              builder: (context, inputValue, child) {
-                // Manually update controller only if text is different to prevent cursor jumping
-                if (inputValue != _controller.text) {
-                  _controller.text = inputValue;
-                  _controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
-                }
-                return TextField(
-                  controller: _controller,
-                  onChanged: provider.setInputValue,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
-                  decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
-                );
-              },
-            )
-          else
-            Selector<ConverterProvider, String>(
-              selector: (_, p) => p.result,
-              builder: (context, result, child) {
-                return Text(
-                  result.isEmpty ? '0' : result,
-                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
-                );
-              },
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withAlpha(80),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Center(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
