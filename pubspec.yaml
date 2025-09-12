@@ -13,7 +13,7 @@ dependencies:
   provider: ^6.1.5+1
   google_fonts: ^6.3.1
   auto_size_text: ^3.0.0
-  math_expressions: ^2.4.0
+  math_expressions: ^3.1.0
   firebase_core: ^4.1.0
 
 dev_dependencies:
