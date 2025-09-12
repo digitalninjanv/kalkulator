@@ -39,12 +39,18 @@ class DefaultFirebaseOptions {
         );
       case TargetPlatform.linux:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         return linux;
 =======
+=======
+>>>>>>> Stashed changes
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
       default:
         throw UnsupportedError(
@@ -60,9 +66,14 @@ class DefaultFirebaseOptions {
     projectId: 'chatterbox-comedy',
     authDomain: 'chatterbox-comedy.firebaseapp.com',
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     databaseURL:
         'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
+=======
+    databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chatterbox-comedy.firebasestorage.app',
+>>>>>>> Stashed changes
 =======
     databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.firebasestorage.app',
@@ -74,6 +85,7 @@ class DefaultFirebaseOptions {
     appId: '1:136251052813:android:ecac34d4488c153904d644',
     messagingSenderId: '136251052813',
     projectId: 'chatterbox-comedy',
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     databaseURL:
         'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
@@ -89,6 +101,10 @@ class DefaultFirebaseOptions {
     databaseURL:
         'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
+=======
+    databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chatterbox-comedy.firebasestorage.app',
+>>>>>>> Stashed changes
 =======
     databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.firebasestorage.app',
