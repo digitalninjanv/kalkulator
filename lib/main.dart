@@ -4,7 +4,27 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'package:provider/provider.dart';
 
+<<<<<<< Updated upstream
 import 'converter_screen.dart';
+=======
+// --- Top-level function for Isolate computation ---
+String _evaluateExpression(String expression) {
+  try {
+    String finalExpression = expression.replaceAll('x', '*').replaceAll('√', 'sqrt');
+    if (finalExpression.contains('/0') && !finalExpression.contains('/0.')) {
+      return 'Tak terhingga';
+    }
+    final p = ShuntingYardParser();
+    final exp = p.parse(finalExpression);
+    final evaluator = RealEvaluator(); // Removed const
+    final eval = evaluator.evaluate(exp, ContextModel()); // Used ContextModel()
+
+    return eval.toString();
+  } catch (e) {
+    return 'Error';
+  }
+}
+>>>>>>> Stashed changes
 
 void main() {
   runApp(
@@ -303,9 +323,35 @@ class CalculatorButton extends StatelessWidget {
     final bool isEqual = text == '=';
     final bool isTopRow = ['AC', '⌫', '%'].contains(text);
 
+<<<<<<< Updated upstream
     Color buttonColor;
     Color textColor;
     BoxShape shape = BoxShape.circle;
+=======
+    final boxDecoration = widget.isAccent
+        ? BoxDecoration(
+            color: accentColor,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: _isPressed ? [] : [
+              BoxShadow(color: accentColor.withAlpha((0.5 * 255).round()), offset: const Offset(4, 4), blurRadius: 10),
+              BoxShadow(color: Colors.white.withAlpha((0.5 * 255).round()), offset: const Offset(-4, -4), blurRadius: 10),
+            ],
+          )
+        : BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: _isPressed ? [] : [
+              BoxShadow(
+                color: isDark ? Colors.black.withAlpha((0.4 * 255).round()) : Colors.blueGrey.shade300,
+                offset: const Offset(4, 4), blurRadius: 15, spreadRadius: 1,
+              ),
+              BoxShadow(
+                color: isDark ? Colors.blueGrey.shade800 : Colors.white,
+                offset: const Offset(-4, -4), blurRadius: 15, spreadRadius: 1,
+              ),
+            ],
+          );
+>>>>>>> Stashed changes
 
     if (isEqual) {
       buttonColor = colorScheme.primary;

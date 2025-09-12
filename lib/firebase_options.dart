@@ -38,7 +38,14 @@ class DefaultFirebaseOptions {
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.linux:
+<<<<<<< Updated upstream
         return linux;
+=======
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for linux - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
+>>>>>>> Stashed changes
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -52,9 +59,14 @@ class DefaultFirebaseOptions {
     messagingSenderId: '136251052813',
     projectId: 'chatterbox-comedy',
     authDomain: 'chatterbox-comedy.firebaseapp.com',
+<<<<<<< Updated upstream
     databaseURL:
         'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
+=======
+    databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chatterbox-comedy.firebasestorage.app',
+>>>>>>> Stashed changes
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -62,6 +74,7 @@ class DefaultFirebaseOptions {
     appId: '1:136251052813:android:ecac34d4488c153904d644',
     messagingSenderId: '136251052813',
     projectId: 'chatterbox-comedy',
+<<<<<<< Updated upstream
     databaseURL:
         'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
@@ -76,5 +89,9 @@ class DefaultFirebaseOptions {
     databaseURL:
         'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'chatterbox-comedy.appspot.com',
+=======
+    databaseURL: 'https://chatterbox-comedy-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'chatterbox-comedy.firebasestorage.app',
+>>>>>>> Stashed changes
   );
 }

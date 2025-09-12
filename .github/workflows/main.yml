@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+<<<<<<< Updated upstream
     - name: Checkout repository
       uses: actions/checkout@v3
 
@@ -17,6 +18,14 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '11'
+=======
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+>>>>>>> Stashed changes
 
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
@@ -29,8 +38,19 @@ jobs:
     - name: Build Split APKs
       run: flutter build apk --release --split-per-abi
 
+<<<<<<< Updated upstream
     - name: Upload APK artifacts
       uses: actions/upload-artifact@v3
       with:
         name: release-apks
         path: build/app/outputs/flutter-apk/
+=======
+      - name: Build APK
+        run: flutter build apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+>>>>>>> Stashed changes
